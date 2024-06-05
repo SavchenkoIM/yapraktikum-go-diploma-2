@@ -2,6 +2,8 @@ syntax = "proto3";
 package grpc;
 option go_package="internal/proto";
 
+import "google/api/annotations.proto";
+
 // User handling
 
 message UserRequest {
@@ -21,8 +23,8 @@ message DataCredentials {
 
 message DataCreditCard {
   string name = 1;
-  uint32 number = 2;
-  uint32 until = 3;
+  string number = 2;
+  string until = 3;
   string holder = 4;
 }
 
@@ -31,11 +33,17 @@ message DataTextNote {
   string text = 2;
 }
 
+message DataBLOB {
+  string name = 1;
+  string file_name = 2;
+}
+
 enum DataType {
   UNSPECIFIED = 0;
   CREDENTIALS = 1;
   CREDIT_CARD = 2;
   TEXT_NOTE = 3;
+  BLOB = 4;
 }
 
 enum OperationType {
@@ -59,7 +67,8 @@ message DataWriteRequest {
     DataCredentials credentials = 2;
     DataCreditCard credit_card = 3;
     DataTextNote text_note = 4;
-    MetaDataKV metadata = 5;
+    DataBLOB blob = 5;
+    MetaDataKV metadata = 6;
   }
 }
 
@@ -74,8 +83,9 @@ message DataRecord {
     DataCredentials credentials = 1;
     DataCreditCard credit_card = 2;
     DataTextNote text_note = 3;
+    DataBLOB blob = 4;
   }
-  repeated MetaDataKV metadata = 4;
+  repeated MetaDataKV metadata = 5;
 }
 
 message DataReadResponse {
@@ -90,8 +100,28 @@ message EmptyResponse {
 // Service
 
 service PasswordVaultService {
-  rpc UserCreate(UserRequest) returns (UserResponse) {};
-  rpc UserLogin(UserRequest) returns (UserResponse) {};
-  rpc DataWrite(DataWriteRequest) returns (EmptyResponse) {};
-  rpc DataRead(DataReadRequest) returns (DataReadResponse) {};
+  rpc UserCreate(UserRequest) returns (UserResponse) {
+    option (google.api.http) = {
+      post: "/user/create"
+      body: "*"
+    };
+  };
+  rpc UserLogin(UserRequest) returns (UserResponse) {
+    option (google.api.http) = {
+      post: "/user/login"
+      body: "*"
+    };
+  };
+  rpc DataWrite(DataWriteRequest) returns (EmptyResponse) {
+    option (google.api.http) = {
+      post: "/data/write"
+      body: "*"
+    };
+  };
+  rpc DataRead(DataReadRequest) returns (DataReadResponse) {
+    option (google.api.http) = {
+      post: "/data/read"
+      body: "*"
+    };
+  };
 }

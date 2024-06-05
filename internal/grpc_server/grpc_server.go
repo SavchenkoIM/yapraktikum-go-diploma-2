@@ -9,26 +9,26 @@ import (
 	"net"
 	"passwordvault/internal/config"
 	proto "passwordvault/internal/proto/gen"
-	"passwordvault/internal/storage"
+	"passwordvault/internal/storage/server_store"
 	"passwordvault/internal/utils"
 )
 
 type GRPCServer struct {
 	proto.UnsafePasswordVaultServiceServer
-	dataStorage *storage.Storage
+	dataStorage *server_store.Storage
 	gsrv        *grpc.Server
 	srv         net.Listener
 	cfg         *config.ServerConfig
 	logger      *zap.Logger
 }
 
-func NewGRPCServer(dataStorage *storage.Storage, cfg *config.ServerConfig, logger *zap.Logger) *GRPCServer {
+func NewGRPCServer(dataStorage *server_store.Storage, cfg *config.ServerConfig, logger *zap.Logger) *GRPCServer {
 	return &GRPCServer{dataStorage: dataStorage, cfg: cfg, logger: logger}
 }
 
 func (s *GRPCServer) ListenAndServeAsync() {
 	var err error
-	s.srv, err = net.Listen("tcp", s.cfg.EndPoint)
+	s.srv, err = net.Listen("tcp", s.cfg.GrpcEndPoint)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -47,7 +47,7 @@ func (s *GRPCServer) ListenAndServeAsync() {
 	proto.RegisterPasswordVaultServiceServer(s.gsrv, s)
 
 	go func() {
-		s.logger.Info("gRPC server running at " + s.cfg.EndPoint)
+		s.logger.Info("gRPC server running at " + s.cfg.GrpcEndPoint)
 
 		if err := s.gsrv.Serve(s.srv); err != nil {
 			s.logger.Error(err.Error())

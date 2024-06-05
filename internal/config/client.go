@@ -11,11 +11,15 @@ var cliOnce sync.Once
 var cliConfig *ClientConfig
 
 type clientConfigNull struct {
-	Address *string
+	AddressGRPC     *string
+	AddressHTTP     *string
+	FilesDefaultDir *string
 }
 
 type ClientConfig struct {
-	Address string
+	AddressGRPC     string
+	AddressHTTP     string
+	FilesDefaultDir string
 }
 
 func GetClientConfig() *ClientConfig {
@@ -28,12 +32,16 @@ func GetClientConfig() *ClientConfig {
 // Parses Client configuration from Command Line args
 func getClientConfigFromCLArgs() clientConfigNull {
 	clientConfig := clientConfigNull{}
-	address := flag.String("a", "", "Server address:port")
+	addressGrpc := flag.String("ag", "", "gRPC Server address:port")
+	addressHttp := flag.String("ah", "", "HTTP Server address:port")
+	filesDefaultDir := flag.String("f", "", "Files default directory")
 	flag.Parse()
 
 	usedFlags := getProvidedFlags(flag.Visit)
 
-	clientConfig.Address = getParWithSetCheck(*address, slices.Contains(usedFlags, "a"))
+	clientConfig.AddressGRPC = getParWithSetCheck(*addressGrpc, slices.Contains(usedFlags, "ag"))
+	clientConfig.AddressHTTP = getParWithSetCheck(*addressHttp, slices.Contains(usedFlags, "ah"))
+	clientConfig.FilesDefaultDir = getParWithSetCheck(*filesDefaultDir, slices.Contains(usedFlags, "f"))
 
 	return clientConfig
 }
@@ -41,24 +49,32 @@ func getClientConfigFromCLArgs() clientConfigNull {
 // Parses Client configuration from Enviroment Vars
 func getClientConfigFromEnvVar() clientConfigNull {
 	clientConfig := clientConfigNull{}
-	address := envflag.String("ADDRESS", "", "Server address:port")
+	addressGrpc := envflag.String("ADDRESS_GRPC", "", "gRPC Server address:port")
+	addressHttp := envflag.String("ADDRESS_HTTP", "", "HTTP Server address:port")
+	filesDefaultDir := envflag.String("FILES_DEFAULT_DIR", "", "Files default directory")
 	envflag.Parse()
 
 	usedFlags := getProvidedFlags(envflag.Visit)
 
-	clientConfig.Address = getParWithSetCheck(*address, slices.Contains(usedFlags, "ADDRESS"))
+	clientConfig.AddressGRPC = getParWithSetCheck(*addressGrpc, slices.Contains(usedFlags, "ADDRESS_GRPC"))
+	clientConfig.AddressHTTP = getParWithSetCheck(*addressHttp, slices.Contains(usedFlags, "ADDRESS_HTTP"))
+	clientConfig.FilesDefaultDir = getParWithSetCheck(*filesDefaultDir, slices.Contains(usedFlags, "FILES_DEFAULT_DIR"))
 
 	return clientConfig
 }
 
 func CombineClientConfigs(configs ...clientConfigNull) *ClientConfig {
 	clientConfig := ClientConfig{
-		Address: ":8080",
+		AddressGRPC:     ":8081",
+		AddressHTTP:     ":8080",
+		FilesDefaultDir: ".",
 	}
 
 	slices.Reverse(configs)
 	for _, cfg := range configs {
-		combineParameter(&clientConfig.Address, cfg.Address)
+		combineParameter(&clientConfig.AddressGRPC, cfg.AddressGRPC)
+		combineParameter(&clientConfig.AddressHTTP, cfg.AddressHTTP)
+		combineParameter(&clientConfig.FilesDefaultDir, cfg.FilesDefaultDir)
 	}
 
 	return &clientConfig

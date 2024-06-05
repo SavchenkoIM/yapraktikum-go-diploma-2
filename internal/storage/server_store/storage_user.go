@@ -1,4 +1,4 @@
-package storage
+package server_store
 
 import (
 	"context"
@@ -6,8 +6,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/jackc/pgerrcode"
+	uuid "github.com/jackc/pgx-gofrs-uuid"
 	"golang.org/x/crypto/scrypt"
 	"io"
+	"passwordvault/internal/storage/file_store"
 	"passwordvault/internal/utils"
 	"strings"
 )
@@ -23,16 +25,39 @@ func (s *Storage) UserRegister(ctx context.Context, login string, password strin
 		return err
 	}
 
-	query := `INSERT INTO users (login, password, salt) VALUES ($1, $2, $3)`
+	minioPassword := utils.GeneratePassword(25, true, true, true)
 
-	if _, err = s.dbConn.Exec(ctx, query, login, hex.EncodeToString(hash), hex.EncodeToString(salt)); err != nil {
+	tx, err := s.dbConn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	query := `INSERT INTO users (login, password, salt, filestore_access_key) VALUES ($1, $2, $3, pgp_sym_encrypt($4, $5)) RETURNING id`
+
+	var newUuid uuid.UUID
+
+	if err = tx.QueryRow(ctx, query, login, hex.EncodeToString(hash), hex.EncodeToString(salt),
+		minioPassword,
+		s.config.Key).Scan(&newUuid); err != nil {
 		if strings.Contains(err.Error(), pgerrcode.UniqueViolation) {
 			s.logger.Sugar().Errorf("Login %s already exists in database", login)
 			return fmt.Errorf("%s: %w", err.Error(), ErrUserAlreadyExists)
 		}
+		tx.Rollback(ctx)
 		return err
 	}
 
+	uuidV, _ := newUuid.UUIDValue()
+
+	mCli := file_store.NewMinioStorage(s.config.MinioEndPoint, "", s.config.MinioAdminId, s.config.MinioAdminKey)
+	if err = mCli.UserReg(ctx, fmt.Sprintf("%x", uuidV.Bytes), minioPassword); err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 

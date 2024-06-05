@@ -1,4 +1,4 @@
-package storage
+package server_store
 
 import (
 	"context"
@@ -32,6 +32,13 @@ func (s *Storage) DataWrite(ctx context.Context, request *proto.DataWriteRequest
 		case proto.OperationType_DELETE:
 			_, err = s.dbConn.Exec(ctx, getDataDeleteQuery("text_note"), userId, v.TextNote.Name)
 		}
+	case *proto.DataWriteRequest_Blob:
+		switch request.Action {
+		case proto.OperationType_UPSERT:
+			_, err = s.dbConn.Exec(ctx, getDataUpsertQuery("blob"), userId, v.Blob.Name, v.Blob.FileName, s.config.Key)
+		case proto.OperationType_DELETE:
+			_, err = s.dbConn.Exec(ctx, getDataDeleteQuery("blob"), userId, v.Blob.FileName)
+		}
 	case *proto.DataWriteRequest_Metadata:
 		table := ""
 		switch v.Metadata.ParentType {
@@ -41,6 +48,8 @@ func (s *Storage) DataWrite(ctx context.Context, request *proto.DataWriteRequest
 			table = "credit_card"
 		case proto.DataType_TEXT_NOTE:
 			table = "text_note"
+		case proto.DataType_BLOB:
+			table = "blob"
 		}
 
 		switch request.Action {

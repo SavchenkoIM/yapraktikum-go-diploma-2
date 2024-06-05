@@ -1,4 +1,4 @@
-package storage
+package server_store
 
 import (
 	"fmt"
@@ -80,7 +80,7 @@ SELECT id FROM metadata_%s WHERE data_%s.id = metadata_%s.data_id `, tableName, 
 			sb.WriteString(`AND (`)
 		}
 		for i, v := range request.Metadata {
-			sb.WriteString(fmt.Sprintf(`(pgp_sym_decrypt(metadata_%s."content", $2) = $`+strconv.Itoa(2*i+3)+` AND metadata_%s.name=$`+strconv.Itoa(2*i+4)+`)`, tableName, tableName))
+			sb.WriteString(fmt.Sprintf(`(pgp_sym_decrypt(metadata_%s."content", $2) LIKE $`+strconv.Itoa(2*i+3)+` AND metadata_%s.name=$`+strconv.Itoa(2*i+4)+`)`, tableName, tableName))
 			if i < len(request.Metadata)-1 {
 				sb.WriteString(" OR")
 			}

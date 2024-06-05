@@ -3,11 +3,17 @@ package main
 import (
 	"context"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"passwordvault/internal/config"
 	"passwordvault/internal/grpc_server"
-	"passwordvault/internal/storage"
+	"passwordvault/internal/http_server"
+	"passwordvault/internal/storage/server_store"
 	"time"
 )
+
+func WithUserCredentialsFrom(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return handler(ctx, req)
+}
 
 func main() {
 	parentCtx, _ := context.WithCancel(context.Background())
@@ -15,7 +21,7 @@ func main() {
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
-	db, err := storage.New(config.GetServerConfig(), logger)
+	db, err := server_store.New(config.GetServerConfig(), logger)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -23,8 +29,12 @@ func main() {
 	if err != nil {
 		logger.Error(err.Error())
 	}
-	srv := grpc_server.NewGRPCServer(db, config.GetServerConfig(), logger)
-	srv.ListenAndServeAsync()
+
+	gSrv := grpc_server.NewGRPCServer(db, config.GetServerConfig(), logger)
+	gSrv.ListenAndServeAsync()
+
+	hSrv := http_server.NewHttpServer(parentCtx, db, config.GetServerConfig(), logger)
+	hSrv.ListenAndServeAsync()
 
 	for {
 		time.Sleep(5 * time.Second)

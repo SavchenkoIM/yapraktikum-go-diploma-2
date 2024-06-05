@@ -1,4 +1,4 @@
-package storage
+package server_store
 
 import (
 	"fmt"
@@ -9,17 +9,12 @@ var dataFieldsCount = map[string]int{
 	"text_note":   1,
 	"credentials": 2,
 	"credit_card": 3,
+	"blob":        1,
 }
 
 var queryCreateExtensionUUID = `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`
 
 var queryCreateExtensionPGCrypto = `CREATE EXTENSION IF NOT EXISTS "pgcrypto"`
-
-var queryCreateTypeContentType = `DO $$ BEGIN
-IF to_regtype('content_type') IS NULL THEN
-	CREATE TYPE content_type AS ENUM ('credit_card', 'login_password', 'text', 'binary');
-END IF;
-END $$;`
 
 var queryCreateUsers string = `CREATE TABLE IF NOT EXISTS public.users
 (
@@ -27,6 +22,7 @@ var queryCreateUsers string = `CREATE TABLE IF NOT EXISTS public.users
     login text NOT NULL,
     password text NOT NULL,
     salt text NOT NULL,
+    filestore_access_key bytea DEFAULT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_login UNIQUE (login)
 )

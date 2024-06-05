@@ -1,4 +1,4 @@
-package storage
+package server_store
 
 import (
 	"context"
@@ -19,7 +19,12 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 	if request.Type != proto.DataType_UNSPECIFIED {
 		dataTypes = []proto.DataType{request.Type}
 	} else {
-		dataTypes = []proto.DataType{proto.DataType_CREDENTIALS, proto.DataType_CREDIT_CARD, proto.DataType_TEXT_NOTE}
+		dataTypes = []proto.DataType{
+			proto.DataType_CREDENTIALS,
+			proto.DataType_CREDIT_CARD,
+			proto.DataType_TEXT_NOTE,
+			proto.DataType_BLOB,
+		}
 	}
 
 	for _, dataType := range dataTypes {
@@ -31,10 +36,11 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 			tableName = "credit_card"
 		case proto.DataType_TEXT_NOTE:
 			tableName = "text_note"
+		case proto.DataType_BLOB:
+			tableName = "blob"
 		}
 
 		query, params := getDataReadQuery(tableName, request, s.config)
-		println(query)
 
 		rows, err := s.dbConn.Query(ctx, query, params...)
 		if err != nil {
@@ -68,8 +74,8 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 				}
 			case proto.DataType_CREDIT_CARD:
 				var (
-					number uint32
-					until  uint32
+					number string
+					until  string
 					holder string
 				)
 				err := rows.Scan(&uuid, &name, &number, &until, &holder)
@@ -97,6 +103,21 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 					Data: &proto.DataRecord_TextNote{TextNote: &proto.DataTextNote{
 						Name: name,
 						Text: text,
+					}},
+					Metadata: make([]*proto.MetaDataKV, 0),
+				}
+			case proto.DataType_BLOB:
+				var (
+					fileName string
+				)
+				err := rows.Scan(&uuid, &name, &fileName)
+				if err != nil {
+					return nil, status.Error(codes.Unknown, fmt.Sprintf("database error: %v", err))
+				}
+				dr = &proto.DataRecord{
+					Data: &proto.DataRecord_Blob{Blob: &proto.DataBLOB{
+						Name:     name,
+						FileName: fileName,
 					}},
 					Metadata: make([]*proto.MetaDataKV, 0),
 				}

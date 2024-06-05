@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v5.27.0
-// source: auth.proto
+// source: service.proto
 
 package proto
 
@@ -216,5 +216,5 @@ var PasswordVaultService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "auth.proto",
+	Metadata: "service.proto",
 }

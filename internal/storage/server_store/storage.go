@@ -1,4 +1,4 @@
-package storage
+package server_store
 
 import (
 	"context"
@@ -90,14 +90,15 @@ func (s *Storage) Init(ctx context.Context) error {
 	queries := []string{
 		queryCreateExtensionUUID,
 		queryCreateExtensionPGCrypto,
-		queryCreateTypeContentType,
 		queryCreateUsers,
 		getCreateDataQuery("credentials"),
 		getCreateDataQuery("credit_card"),
 		getCreateDataQuery("text_note"),
+		getCreateDataQuery("blob"),
 		getCreateMetaDataQuery("credentials"),
 		getCreateMetaDataQuery("credit_card"),
 		getCreateMetaDataQuery("text_note"),
+		getCreateMetaDataQuery("blob"),
 	}
 
 	for _, query := range queries {
