@@ -18,10 +18,10 @@ type UniClient struct {
 	logger *zap.Logger
 }
 
-func NewUniClient(logger *zap.Logger) *UniClient {
+func NewUniClient(logger *zap.Logger, clientConfig config.ClientConfig) *UniClient {
 	return &UniClient{
-		gCli:   grpc_client.NewGRPCClient(config.GetClientConfig(), logger),
-		hCli:   http_client.NewHTTPClient(config.GetClientConfig(), logger),
+		gCli:   grpc_client.NewGRPCClient(&clientConfig, logger),
+		hCli:   http_client.NewHTTPClient(&clientConfig, logger),
 		logger: logger,
 	}
 }
@@ -104,6 +104,7 @@ func (c *UniClient) DataPrint(ctx context.Context, filter *proto.DataReadRequest
 	dataRes, err := c.DataRead(ctx, filter)
 	if err != nil {
 		c.logger.Error("Failed to print data", zap.Error(err))
+		return
 	}
 
 	for _, v := range dataRes.Data {

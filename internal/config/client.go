@@ -22,12 +22,12 @@ type ClientConfig struct {
 	FilesDefaultDir string
 }
 
-func GetClientConfig() *ClientConfig {
+/*func GetClientConfig() *ClientConfig {
 	cliOnce.Do(func() {
 		cliConfig = CombineClientConfigs(getClientConfigFromCLArgs(), getClientConfigFromEnvVar())
 	})
 	return cliConfig
-}
+}*/
 
 // Parses Client configuration from Command Line args
 func getClientConfigFromCLArgs() clientConfigNull {
