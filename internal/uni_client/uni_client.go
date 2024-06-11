@@ -52,6 +52,11 @@ func (c *UniClient) UserCreate(ctx context.Context, username string, password st
 	return userData.AccessToken, nil
 }
 
+func (c *UniClient) SetToken(token string) {
+	c.hCli.SetToken(token)
+	c.gCli.SetToken(token)
+}
+
 func (c *UniClient) DownloadFile(ctx context.Context, objectName string) error {
 	data, err := c.gCli.DataRead(ctx, &proto.DataReadRequest{
 		Type:     proto.DataType_BLOB,

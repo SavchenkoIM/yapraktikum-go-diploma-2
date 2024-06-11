@@ -3,6 +3,7 @@ package http_client
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"go.uber.org/zap"
@@ -28,21 +29,31 @@ func NewHTTPClient(cfg *config.ClientConfig, logger *zap.Logger) *HTTPClient {
 	}
 }
 
+func (c *HTTPClient) getTlsClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				ClientAuth:         tls.NoClientCert, // Server provides cert
+				InsecureSkipVerify: true,             // Any server_store cert is accepted
+			},
+		},
+	}
+}
+
 func (c *HTTPClient) SetToken(token string) {
 	c.token = token
 }
 
 func (c *HTTPClient) DownloadFile(ctx context.Context, fileName string) error {
 	r, err := http.NewRequest("POST",
-		fmt.Sprintf("http://%s/download", c.cfg.AddressHTTP),
+		fmt.Sprintf("https://%s/download", c.cfg.AddressHTTP),
 		bytes.NewBuffer([]byte(fmt.Sprintf(`{ "filename": "%s" }`, fileName))))
 	if err != nil {
 		return err
 	}
 	r.Header.Add("Authorization", fmt.Sprintf("bearer %s", c.token))
 
-	cli := http.Client{}
-	resp, err := cli.Do(r)
+	resp, err := c.getTlsClient().Do(r)
 	if err != nil {
 		return err
 	}
@@ -88,15 +99,14 @@ func (c *HTTPClient) UploadFile(ctx context.Context, fileName string) error {
 	defer file.Close()
 
 	r, err := http.NewRequest("POST",
-		fmt.Sprintf("http://%s/upload", c.cfg.AddressHTTP), file)
+		fmt.Sprintf("https://%s/upload", c.cfg.AddressHTTP), file)
 	if err != nil {
 		return err
 	}
 	r.Header.Add("Authorization", fmt.Sprintf("bearer %s", c.token))
 	r.Header.Add("Content-Disposition", fmt.Sprintf(`attachment; filename=%s`, filepath.Base(fFileName)))
 
-	cli := http.Client{}
-	resp, err := cli.Do(r)
+	resp, err := c.getTlsClient().Do(r)
 	if err != nil {
 		return err
 	}

@@ -1,3 +1,7 @@
+buildDate = '2024/06/10'
+srvVer = '1.2.3'
+cliVer = '1.1.1'
+
 gen:
 	protoc -I ./internal/proto/src \
 	-I ../googleapis \
@@ -15,3 +19,4 @@ install_protoc:
 cert:
 	openssl req -x509 -newkey rsa:4096 -keyout ./data/cert/priv.pem -out ./data/cert/cert.pem -passout pass:6879hjkw%4 -sha256 -days 365
 	openssl rsa -in ./data/cert/priv.pem -out ./data/cert/priv.pem -passin pass:6879hjkw%4
+

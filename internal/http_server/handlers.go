@@ -69,7 +69,11 @@ func (s *HttpServer) DownloadFile(w http.ResponseWriter, r *http.Request, dummy 
 		return
 	}
 
-	ms := file_store.NewMinioStorage(s.config.MinioEndPoint, "securestorageservice", fileStoreId, key)
+	ms, err := file_store.NewMinioStorage(r.Context(), s.config.MinioEndPoint, "securestorageservice", fileStoreId, key)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Error creating minio storage: %v", err)))
+	}
 	obj, err := ms.Download(r.Context(), fmt.Sprintf(`%s\%s`, fileStoreId, filename))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -106,7 +110,12 @@ func (s *HttpServer) UploadFile(w http.ResponseWriter, r *http.Request, dummy ma
 		return
 	}
 
-	ms := file_store.NewMinioStorage(s.config.MinioEndPoint, "securestorageservice", fileStoreId, key)
+	ms, err := file_store.NewMinioStorage(r.Context(), s.config.MinioEndPoint, "securestorageservice", fileStoreId, key)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
 	err = ms.Upload(r.Context(), r.Body, fmt.Sprintf(`%s\%s`, fileStoreId, filename))
 	if err != nil {
 		w.WriteHeader(http.StatusTeapot)

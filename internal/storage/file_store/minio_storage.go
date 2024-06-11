@@ -16,14 +16,35 @@ type MinioStorage struct {
 	secure     bool
 }
 
-func NewMinioStorage(address string, bucketName string, userId string, accessKey string) *MinioStorage {
-	return &MinioStorage{
+func NewMinioStorage(ctx context.Context, address string, bucketName string, userId string, accessKey string) (*MinioStorage, error) {
+	ms := &MinioStorage{
 		address:    address,
 		bucketName: bucketName,
 		userId:     userId,
 		accessKey:  accessKey,
 		secure:     false,
 	}
+
+	client, err := minio.New(ms.address, &minio.Options{
+		Creds:  credentials.NewStaticV4(ms.userId, ms.accessKey, ""),
+		Secure: ms.secure,
+	})
+	if err != nil {
+		return nil, err
+	}
+	exists, err := client.BucketExists(context.Background(), bucketName)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		err = client.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ms, nil
 }
 
 func (ms *MinioStorage) UserReg(ctx context.Context, userId string, accessKey string) error {

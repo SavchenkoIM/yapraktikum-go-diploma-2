@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+var (
+	BuildDate    string
+	BuildVersion string
+)
+
 func WithUserCredentialsFrom(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return handler(ctx, req)
 }
@@ -18,6 +23,9 @@ func WithUserCredentialsFrom(ctx context.Context, req interface{}, info *grpc.Un
 func main() {
 	parentCtx, _ := context.WithCancel(context.Background())
 	logger, err := zap.NewProduction()
+
+	logger.Sugar().Infof("Password Vault Server. Version: v.%s (%s)", BuildVersion, BuildDate)
+
 	if err != nil {
 		logger.Fatal(err.Error())
 	}

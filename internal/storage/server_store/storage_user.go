@@ -49,7 +49,11 @@ func (s *Storage) UserRegister(ctx context.Context, login string, password strin
 
 	uuidV, _ := newUuid.UUIDValue()
 
-	mCli := file_store.NewMinioStorage(s.config.MinioEndPoint, "", s.config.MinioAdminId, s.config.MinioAdminKey)
+	mCli, err := file_store.NewMinioStorage(ctx, s.config.MinioEndPoint, "securestorageservice", s.config.MinioAdminId, s.config.MinioAdminKey)
+	if err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
 	if err = mCli.UserReg(ctx, fmt.Sprintf("%x", uuidV.Bytes), minioPassword); err != nil {
 		tx.Rollback(ctx)
 		return err

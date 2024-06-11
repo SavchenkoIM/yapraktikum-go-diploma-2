@@ -2,10 +2,13 @@ package cli
 
 import (
 	"context"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"passwordvault/internal/config"
 	"passwordvault/internal/uni_client"
+	"path/filepath"
 )
 
 type CliManager struct {
@@ -31,31 +34,64 @@ func (cli *CliManager) rootCmd() *cobra.Command {
 	c.PersistentFlags().StringP("grpc-address", "g", "localhost:8081", "gRPC Server address:port")
 	c.PersistentFlags().StringP("http-address", "a", "localhost:8080", "HTTP Server address:port")
 	c.PersistentFlags().StringP("files-dir", "f", "", "Files default directory")
-	c.PersistentFlags().StringP("login", "l", "", "User Login")
-	c.PersistentFlags().StringP("password", "p", "", "User Password")
+	c.PersistentFlags().StringP("config", "c", "", "Config file path")
+
+	viper.BindPFlag("grpc-address", c.PersistentFlags().Lookup("grpc-address"))
+	viper.BindPFlag("http-address", c.PersistentFlags().Lookup("http-address"))
+	viper.BindPFlag("files-dir", c.PersistentFlags().Lookup("files-dir"))
+	viper.BindPFlag("config", c.PersistentFlags().Lookup("config"))
+
+	viper.BindEnv("grpc-address", "GRPC_ADDRESS",
+		"http-address", "HTTP_ADDRESS",
+		"files-dir", "FILES_DIR",
+		"config", "CONFIG_FILE")
+
+	cli.initConfig(viper.GetString("config"))
+
+	c.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		cli.client = uni_client.NewUniClient(cli.logger, config.ClientConfig{
+			AddressGRPC:     viper.GetString("grpc-address"),
+			AddressHTTP:     viper.GetString("http-address"),
+			FilesDefaultDir: viper.GetString("files-dir"),
+		})
+		cli.client.Start(cmd.Context())
+
+		token := viper.GetString("token")
+		cli.client.SetToken(token)
+
+		return nil
+	}
 
 	c.AddCommand(cli.dataCommand())
 	c.AddCommand(cli.fileCommand())
+	c.AddCommand(cli.userCommand())
 
 	return c
 }
 
 func (cli *CliManager) initClient() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		l, _ := cmd.Flags().GetString("login")
-		p, _ := cmd.Flags().GetString("password")
-		ag, _ := cmd.Flags().GetString("grpc-address")
-		ah, _ := cmd.Flags().GetString("http-address")
-		f, _ := cmd.Flags().GetString("files-dir")
+		return nil
+	}
+}
 
-		cli.client = uni_client.NewUniClient(cli.logger, config.ClientConfig{
-			AddressGRPC:     ag,
-			AddressHTTP:     ah,
-			FilesDefaultDir: f,
-		})
-		cli.client.Start(cmd.Context())
+func (cli *CliManager) initConfig(cfgFile string) {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := homedir.Dir()
+		if err != nil {
+			cli.logger.Fatal(err.Error())
+		}
+		viper.SetConfigFile(filepath.Join(home, "pass_vault.yaml"))
+	}
 
-		_, err := cli.client.UserLogin(cmd.Context(), l, p)
-		return err
+	viper.AutomaticEnv() // read in environment variables that match
+
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err != nil {
+		if cfgFile != "" {
+			cli.logger.Info("config specified but unable to read it, using defaults")
+		}
 	}
 }

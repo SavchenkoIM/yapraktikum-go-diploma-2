@@ -55,7 +55,7 @@ func (s *HttpServer) ListenAndServeAsync() {
 	go func() {
 		s.logger.Info("HTTP server running at " + s.config.HttpEndPoint)
 
-		if err := s.server.ListenAndServe(); err != nil {
+		if err := s.server.ListenAndServeTLS(s.config.CertFileName, s.config.PKFileName); err != nil {
 			s.logger.Error(err.Error())
 			return
 		}
