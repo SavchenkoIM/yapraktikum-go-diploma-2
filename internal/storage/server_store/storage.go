@@ -1,3 +1,5 @@
+// Database Postgres storage for service data
+
 package server_store
 
 import (
@@ -22,7 +24,10 @@ import (
 var ErrUserAlreadyExists error = errors.New("this login already exists in database")
 var ErrUserAuthFailed error = errors.New("authentication failed")
 var ErrUserNotLoggedIn error = errors.New("user session has expired")
+var ErrNoDataAffected error = errors.New("no data was affected. Check request parameters")
+var ErrUnimplemented error = errors.New("unexpected request parameters")
 
+// Postgres storage data
 type Storage struct {
 	dbConn      *pgxpool.Pool
 	config      *config.ServerConfig
@@ -34,6 +39,7 @@ type Storage struct {
 	workersCtx  context.Context    // Storage Workers Context
 }
 
+// Constructor of storage object
 func New(config *config.ServerConfig, logger *zap.Logger) (*Storage, error) {
 	encKey := make([]byte, 128)
 	_, err := rand.Read(encKey)
@@ -68,6 +74,7 @@ func New(config *config.ServerConfig, logger *zap.Logger) (*Storage, error) {
 	return &s, nil
 }
 
+// Initializes storage object before use
 func (s *Storage) Init(ctx context.Context) error {
 	firstInit := false
 	s.rStarter.Do(func() {
@@ -110,6 +117,7 @@ func (s *Storage) Init(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
+// Automatically checks for ping loss and reinitializes storage after database is recovered
 func (s *Storage) autoInit(ctx context.Context) {
 	defer func() { s.workersWg.Done() }()
 	connPrev := true
@@ -133,16 +141,10 @@ func (s *Storage) autoInit(ctx context.Context) {
 	}
 }
 
+// Shuts storage down
 func (s *Storage) Close(ctx context.Context) {
 	s.logger.Info("Stopping storage workers...")
 	s.stopWorkers()
 	s.workersWg.Wait()
 	s.dbConn.Close()
-}
-
-func (s *Storage) setConfig(config *config.ServerConfig) {
-	s.config = config
-}
-func (s *Storage) getConfig() *config.ServerConfig {
-	return s.config
 }

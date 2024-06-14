@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Root "file" command
 func (cli *CliManager) fileCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "file",
@@ -15,11 +16,11 @@ func (cli *CliManager) fileCommand() *cobra.Command {
 	return c
 }
 
+// File upload command
 func (cli *CliManager) fileUpload() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "upload",
-		Short:   "Upload file",
-		PreRunE: cli.initClient(),
+		Use:   "upload",
+		Short: "Upload file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n, _ := cmd.Flags().GetString("name")
 			f, _ := cmd.Flags().GetString("fname")
@@ -35,11 +36,11 @@ func (cli *CliManager) fileUpload() *cobra.Command {
 	return c
 }
 
+// File download command
 func (cli *CliManager) fileDownload() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "download",
-		Short:   "Download file",
-		PreRunE: cli.initClient(),
+		Use:   "download",
+		Short: "Download file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n, _ := cmd.Flags().GetString("name")
 			return cli.client.DownloadFile(cmd.Context(), n)

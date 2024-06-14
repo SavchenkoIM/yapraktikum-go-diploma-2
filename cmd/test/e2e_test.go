@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-	"io"
 	"os"
 	"passwordvault/cmd/test/testcontainers"
 	"passwordvault/internal/config"
@@ -12,7 +11,6 @@ import (
 	"passwordvault/internal/http_server"
 	"passwordvault/internal/storage/server_store"
 	"passwordvault/internal/uni_client"
-	"path/filepath"
 	"testing"
 	"time"
 )
@@ -94,8 +92,8 @@ func Test_E2E(t *testing.T) {
 		hSrv.ListenAndServeAsync()
 	})
 
-	t.Run("Wait_5_Seconds_For_Server_To_Start", func(t *testing.T) {
-		time.Sleep(time.Second * 5)
+	t.Run("Wait_2_Seconds_For_Server_To_Start", func(t *testing.T) {
+		time.Sleep(time.Second * 2)
 	})
 
 	var uCli *uni_client.UniClient
@@ -111,63 +109,10 @@ func Test_E2E(t *testing.T) {
 		uCli.Start(ctx)
 	})
 
-	testLogic(ctx, t, uCli)
-}
+	testLogicUser(ctx, t, uCli)
+	testLogicDataWrite(ctx, t, uCli)
+	testLogicFile(ctx, t, uCli)
+	testLogicDataCheck(ctx, t, uCli)
+	testLogicDataDelete(ctx, t, uCli)
 
-func testLogic(ctx context.Context, t *testing.T, client *uni_client.UniClient) {
-	var err error
-
-	t.Run("Unregistered_User_Login", func(t *testing.T) {
-		_, err = client.UserLogin(ctx, "Victoria", "Victoria's secret")
-		assert.Error(t, err)
-	})
-
-	t.Run("User_Create", func(t *testing.T) {
-		_, err = client.UserCreate(ctx, "Victoria", "Victoria's secret")
-		assert.NoError(t, err)
-	})
-
-	t.Run("Registered_User_Login_Wrong_Pass", func(t *testing.T) {
-		_, err = client.UserLogin(ctx, "Victoria", "Victoria secret")
-		assert.Error(t, err)
-	})
-
-	t.Run("Registered_User_Login", func(t *testing.T) {
-		_, err = client.UserLogin(ctx, "Victoria", "Victoria's secret")
-		assert.NoError(t, err)
-	})
-
-	fileOrig := "test_filestore_dir/document.test"
-	testString := "this is test document"
-	t.Run("Upload_File", func(t *testing.T) {
-		os.MkdirAll(filepath.Dir(fileOrig), os.ModePerm)
-		wrFile, err := os.OpenFile(fileOrig, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
-		defer func() {
-			err = wrFile.Close()
-			assert.NoError(t, err)
-			err = os.Remove(fileOrig)
-			assert.NoError(t, err)
-		}()
-		assert.NoError(t, err)
-		_, err = wrFile.WriteString(testString)
-		assert.NoError(t, err)
-		err = client.UploadFile(ctx, "test_file", filepath.Base(fileOrig))
-		assert.NoError(t, err)
-	})
-
-	t.Run("Download_File", func(t *testing.T) {
-		err = client.DownloadFile(ctx, "test_file")
-		assert.NoError(t, err)
-		file1, err := os.OpenFile(fileOrig, os.O_RDONLY, os.ModePerm)
-		assert.NoError(t, err)
-		defer func() {
-			err = file1.Close()
-			assert.NoError(t, err)
-			err = os.RemoveAll(filepath.Dir(fileOrig))
-			assert.NoError(t, err)
-		}()
-		c1, err := io.ReadAll(file1)
-		assert.NoError(t, err)
-		assert.Equal(t, string(c1), testString)
-	})
 }

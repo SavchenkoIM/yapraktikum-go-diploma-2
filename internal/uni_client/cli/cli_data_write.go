@@ -5,6 +5,7 @@ import (
 	proto "passwordvault/internal/proto/gen"
 )
 
+// Root "data write" command
 func (cli *CliManager) writeCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "write",
@@ -19,11 +20,11 @@ func (cli *CliManager) writeCommand() *cobra.Command {
 	return c
 }
 
+// Write credentials command
 func (cli *CliManager) writeCredentialsCommand() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "cred",
-		Short:   "Write credentials data record",
-		PreRunE: cli.initClient(),
+		Use:   "cred",
+		Short: "Write credentials data record",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n, _ := cmd.Flags().GetString("name")
 			l, _ := cmd.Flags().GetString("dlogin")
@@ -50,11 +51,11 @@ func (cli *CliManager) writeCredentialsCommand() *cobra.Command {
 	return c
 }
 
+// Write credit card command
 func (cli *CliManager) writeCreditCardCommand() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "card",
-		Short:   "Write credit card data record",
-		PreRunE: cli.initClient(),
+		Use:   "card",
+		Short: "Write credit card data record",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n, _ := cmd.Flags().GetString("name")
 			nu, _ := cmd.Flags().GetString("dnumber")
@@ -85,11 +86,11 @@ func (cli *CliManager) writeCreditCardCommand() *cobra.Command {
 	return c
 }
 
+// Write text note command
 func (cli *CliManager) writeTextNoteCommand() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "note",
-		Short:   "Write text note data record",
-		PreRunE: cli.initClient(),
+		Use:   "note",
+		Short: "Write text note data record",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n, _ := cmd.Flags().GetString("name")
 			t, _ := cmd.Flags().GetString("dtext")
@@ -112,11 +113,11 @@ func (cli *CliManager) writeTextNoteCommand() *cobra.Command {
 	return c
 }
 
+// Write metadata command
 func (cli *CliManager) writeMetadataCommand() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "metadata",
-		Short:   "Write metadata for record",
-		PreRunE: cli.initClient(),
+		Use:   "metadata",
+		Short: "Write metadata for record",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			n, _ := cmd.Flags().GetString("name")
 			t, _ := cmd.Flags().GetString("type")
@@ -124,7 +125,7 @@ func (cli *CliManager) writeMetadataCommand() *cobra.Command {
 			v, _ := cmd.Flags().GetString("dvalue")
 			dt, err := RecordType(t).GetType()
 			if err != nil {
-				cli.logger.Error(err.Error())
+				cli.Logger.Error(err.Error())
 				return err
 			}
 			_, err = cli.client.DataWrite(cmd.Context(), &proto.DataWriteRequest{

@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	proto "passwordvault/internal/proto/gen"
 )
 
+// Handler for data read request
 func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) (*proto.DataReadResponse, error) {
 
 	res := &proto.DataReadResponse{}
+
+	LoggedUserId := ctx.Value("LoggedUserId").(string)
 
 	var tableName string
 
@@ -38,9 +42,11 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 			tableName = "text_note"
 		case proto.DataType_BLOB:
 			tableName = "blob"
+		default:
+			return nil, errors.Wrapf(ErrUnimplemented, "Unknown data type")
 		}
 
-		query, params := getDataReadQuery(tableName, request, s.config)
+		query, params := getDataReadQuery(tableName, LoggedUserId, request, s.config)
 
 		rows, err := s.dbConn.Query(ctx, query, params...)
 		if err != nil {

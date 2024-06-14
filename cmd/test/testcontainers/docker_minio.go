@@ -11,19 +11,19 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-// Docker container with Postgres DB
+// Docker container with Minio
 type MinioContainer struct {
 	instance testcontainers.Container
 }
 
-// Constructor for PostgresContainer
+// Constructor for MinioContainer
 func NewMinioContainer() (*MinioContainer, error) {
 
 	//time.Sleep(time.Duration(rand.Int31n(10)*5000) * time.Millisecond) // Temp workaround for go test ./... bug
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	g := CustomLogConsumer{}
+	//g := CustomLogConsumer{}
 	testcontainers.Logger = log.New(&ioutils.NopWriter{}, "", 0)
 	req := testcontainers.ContainerRequest{
 		Image:        "minio/minio",
@@ -32,10 +32,10 @@ func NewMinioContainer() (*MinioContainer, error) {
 		WaitingFor:   wait.ForListeningPort("9000/tcp"),
 		Cmd:          []string{"server", "/data"},
 		Entrypoint:   []string{"minio"},
-		LogConsumerCfg: &testcontainers.LogConsumerConfig{
+		/*LogConsumerCfg: &testcontainers.LogConsumerConfig{
 			Opts:      []testcontainers.LogProductionOption{testcontainers.WithLogProductionTimeout(10 * time.Second)},
 			Consumers: []testcontainers.LogConsumer{&g},
-		},
+		},*/
 	}
 	minio, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
@@ -50,7 +50,7 @@ func NewMinioContainer() (*MinioContainer, error) {
 	}, nil
 }
 
-// Connection string for containerized Postgres instance
+// Address:port for containerized Minio instance
 func (db *MinioContainer) EndPoint() (string, error) {
 	port, err := db.Port()
 	if err != nil {

@@ -5,15 +5,11 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"passwordvault/internal/config"
+	"passwordvault/internal/globals"
 	"passwordvault/internal/grpc_server"
 	"passwordvault/internal/http_server"
 	"passwordvault/internal/storage/server_store"
 	"time"
-)
-
-var (
-	BuildDate    string
-	BuildVersion string
 )
 
 func WithUserCredentialsFrom(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -24,7 +20,7 @@ func main() {
 	parentCtx, _ := context.WithCancel(context.Background())
 	logger, err := zap.NewProduction()
 
-	logger.Sugar().Infof("Password Vault Server. Version: v.%s (%s)", BuildVersion, BuildDate)
+	logger.Sugar().Infof("Password Vault Server. Version: v.%s (%s)", globals.ServerVer, globals.ServerDate)
 
 	if err != nil {
 		logger.Fatal(err.Error())

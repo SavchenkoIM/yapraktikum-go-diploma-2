@@ -1,3 +1,5 @@
+// Clommand line interface for client
+
 package cli
 
 import (
@@ -11,21 +13,18 @@ import (
 	"path/filepath"
 )
 
+// Object, containing global data for cli logic
 type CliManager struct {
 	client *uni_client.UniClient
-	logger *zap.Logger
+	Logger *zap.Logger
 }
 
+// Execution ot root command
 func (cli *CliManager) ExecuteContext(ctx context.Context) error {
-	var err error
-	cli.logger, err = zap.NewProduction()
-	if err != nil {
-		panic(err)
-	}
-
 	return cli.rootCmd().ExecuteContext(ctx)
 }
 
+// Root command
 func (cli *CliManager) rootCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use: "password_vault_client",
@@ -49,7 +48,7 @@ func (cli *CliManager) rootCmd() *cobra.Command {
 	cli.initConfig(viper.GetString("config"))
 
 	c.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		cli.client = uni_client.NewUniClient(cli.logger, config.ClientConfig{
+		cli.client = uni_client.NewUniClient(cli.Logger, config.ClientConfig{
 			AddressGRPC:     viper.GetString("grpc-address"),
 			AddressHTTP:     viper.GetString("http-address"),
 			FilesDefaultDir: viper.GetString("files-dir"),
@@ -69,19 +68,14 @@ func (cli *CliManager) rootCmd() *cobra.Command {
 	return c
 }
 
-func (cli *CliManager) initClient() func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		return nil
-	}
-}
-
+// Reads client configuration from different sources: cl args, envs and config file
 func (cli *CliManager) initConfig(cfgFile string) {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		home, err := homedir.Dir()
 		if err != nil {
-			cli.logger.Fatal(err.Error())
+			cli.Logger.Fatal(err.Error())
 		}
 		viper.SetConfigFile(filepath.Join(home, "pass_vault.yaml"))
 	}
@@ -91,7 +85,7 @@ func (cli *CliManager) initConfig(cfgFile string) {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
 		if cfgFile != "" {
-			cli.logger.Info("config specified but unable to read it, using defaults")
+			cli.Logger.Info("config specified but unable to read it, using defaults")
 		}
 	}
 }

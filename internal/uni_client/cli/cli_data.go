@@ -5,6 +5,7 @@ import (
 	proto "passwordvault/internal/proto/gen"
 )
 
+// Root "data" command
 func (cli *CliManager) dataCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "data",
@@ -18,23 +19,23 @@ func (cli *CliManager) dataCommand() *cobra.Command {
 	return c
 }
 
+// Data print command
 func (cli *CliManager) printCommand() *cobra.Command {
 	c := &cobra.Command{
-		Use:     "print",
-		Short:   "Print required data objects",
-		PreRunE: cli.initClient(),
+		Use:   "print",
+		Short: "Print required data objects",
 		Run: func(cmd *cobra.Command, args []string) {
 			n, _ := cmd.Flags().GetString("name")
 			t, _ := cmd.Flags().GetString("type")
 			m, _ := cmd.Flags().GetStringSlice("metadata")
 			dt, err := RecordType(t).GetType()
 			if err != nil {
-				cli.logger.Error(err.Error())
+				cli.Logger.Error(err.Error())
 				return
 			}
 			fl, err := MetadataFilters(m).GetFilters()
 			if err != nil {
-				cli.logger.Error(err.Error())
+				cli.Logger.Error(err.Error())
 				return
 			}
 			cli.client.DataPrint(cmd.Context(), &proto.DataReadRequest{

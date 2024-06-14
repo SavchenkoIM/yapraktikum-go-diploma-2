@@ -33,7 +33,7 @@ WITH (
 var queryCreateData string = `CREATE TABLE IF NOT EXISTS public.data_{table}
 (
     id uuid NOT NULL DEFAULT uuid_generate_v4(),
-    user_id uuid NOT NULL REFERENCES users (id),
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     name text NOT NULL,
 	{content}
     md5 char(32),

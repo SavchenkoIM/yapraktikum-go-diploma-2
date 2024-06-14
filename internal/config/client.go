@@ -63,6 +63,7 @@ func getClientConfigFromEnvVar() clientConfigNull {
 	return clientConfig
 }
 
+// Concatenates client configs from different sources
 func CombineClientConfigs(configs ...clientConfigNull) *ClientConfig {
 	clientConfig := ClientConfig{
 		AddressGRPC:     ":8081",

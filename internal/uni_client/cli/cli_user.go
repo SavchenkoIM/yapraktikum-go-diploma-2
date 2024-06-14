@@ -6,8 +6,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+// User handler function delegate
 type userHandleFunc func(context.Context, string, string) (string, error)
 
+// Root "user" command
 func (cli *CliManager) userCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "user",
@@ -22,6 +24,7 @@ func (cli *CliManager) userCommand() *cobra.Command {
 	return c
 }
 
+// Unified action for user login and create
 func (cli *CliManager) abstractUserAction(cmd *cobra.Command, act userHandleFunc) error {
 	l, _ := cmd.Flags().GetString("login")
 	p, _ := cmd.Flags().GetString("password")
@@ -38,6 +41,7 @@ func (cli *CliManager) abstractUserAction(cmd *cobra.Command, act userHandleFunc
 	return nil
 }
 
+// User login command
 func (cli *CliManager) userLogin() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "login",
@@ -49,6 +53,7 @@ func (cli *CliManager) userLogin() *cobra.Command {
 	return c
 }
 
+// User create command
 func (cli *CliManager) userCreate() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "create",

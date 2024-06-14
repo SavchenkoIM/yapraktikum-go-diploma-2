@@ -57,8 +57,9 @@ func getMetaDataDeleteQuery(tableName string) string {
 	return fmt.Sprintf("DELETE FROM public.metadata_%s WHERE data_id IN (SELECT id FROM public.data_%s WHERE user_id = $1 AND name = $2 ) AND name = $3", tableName, tableName)
 }
 
-func getDataReadQuery(tableName string, request *proto.DataReadRequest, cfg *config.ServerConfig) (string, []interface{}) {
+func getDataReadQuery(tableName string, userID string, request *proto.DataReadRequest, cfg *config.ServerConfig) (string, []interface{}) {
 	params := make([]interface{}, 0)
+	params = append(params, userID)
 	params = append(params, request.NameMask)
 	params = append(params, cfg.Key)
 
@@ -66,7 +67,7 @@ func getDataReadQuery(tableName string, request *proto.DataReadRequest, cfg *con
 	sb.WriteString(fmt.Sprintf(`SELECT data_%s.id, data_%s.name`, tableName, tableName))
 
 	for i := 0; i < dataFieldsCount[tableName]; i++ {
-		sb.WriteString(fmt.Sprintf(",\npgp_sym_decrypt(content_%d, $2) AS content_%d", i+1, i+1))
+		sb.WriteString(fmt.Sprintf(",\npgp_sym_decrypt(content_%d, $3) AS content_%d", i+1, i+1))
 	}
 
 	if len(request.Metadata) == 0 {
@@ -80,7 +81,7 @@ SELECT id FROM metadata_%s WHERE data_%s.id = metadata_%s.data_id `, tableName, 
 			sb.WriteString(`AND (`)
 		}
 		for i, v := range request.Metadata {
-			sb.WriteString(fmt.Sprintf(`(pgp_sym_decrypt(metadata_%s."content", $2) LIKE $`+strconv.Itoa(2*i+3)+` AND metadata_%s.name=$`+strconv.Itoa(2*i+4)+`)`, tableName, tableName))
+			sb.WriteString(fmt.Sprintf(`(pgp_sym_decrypt(metadata_%s."content", $3) LIKE $`+strconv.Itoa(2*i+4)+` AND metadata_%s.name=$`+strconv.Itoa(2*i+5)+`)`, tableName, tableName))
 			if i < len(request.Metadata)-1 {
 				sb.WriteString(" OR")
 			}
@@ -94,7 +95,8 @@ SELECT id FROM metadata_%s WHERE data_%s.id = metadata_%s.data_id `, tableName, 
 		sb.WriteString(`)  AND `)
 	}
 
-	sb.WriteString(` name LIKE $1`)
+	sb.WriteString(` name LIKE $2 `)
+	sb.WriteString(` AND user_id = $1 `)
 
 	return sb.String(), params
 }

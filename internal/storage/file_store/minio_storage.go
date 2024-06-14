@@ -8,6 +8,7 @@ import (
 	"io"
 )
 
+// Minio Storage access object
 type MinioStorage struct {
 	address    string
 	bucketName string
@@ -16,6 +17,7 @@ type MinioStorage struct {
 	secure     bool
 }
 
+// Constructs minio storage access object
 func NewMinioStorage(ctx context.Context, address string, bucketName string, userId string, accessKey string) (*MinioStorage, error) {
 	ms := &MinioStorage{
 		address:    address,
@@ -47,6 +49,7 @@ func NewMinioStorage(ctx context.Context, address string, bucketName string, use
 	return ms, nil
 }
 
+// Minio user registration
 func (ms *MinioStorage) UserReg(ctx context.Context, userId string, accessKey string) error {
 	mdmClnt, err := madmin.NewWithOptions(ms.address, &madmin.Options{
 		Creds:     credentials.NewStaticV4(ms.userId, ms.accessKey, ""),
@@ -75,6 +78,7 @@ func (ms *MinioStorage) UserReg(ctx context.Context, userId string, accessKey st
 	return nil
 }
 
+// Download file from minio
 func (ms *MinioStorage) Download(ctx context.Context, fileName string) (io.Reader, error) {
 	minioClient, err := minio.New(ms.address, &minio.Options{
 		Creds:  credentials.NewStaticV4(ms.userId, ms.accessKey, ""),
@@ -91,6 +95,7 @@ func (ms *MinioStorage) Download(ctx context.Context, fileName string) (io.Reade
 	return obj, nil
 }
 
+// Upload file to minio
 func (ms *MinioStorage) Upload(ctx context.Context, reader io.Reader, fileName string) error {
 	minioClient, err := minio.New(ms.address, &minio.Options{
 		Creds:  credentials.NewStaticV4(ms.userId, ms.accessKey, ""),
@@ -100,6 +105,22 @@ func (ms *MinioStorage) Upload(ctx context.Context, reader io.Reader, fileName s
 		return err
 	}
 	_, err = minioClient.PutObject(ctx, ms.bucketName, fileName, reader, -1, minio.PutObjectOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete file
+func (ms *MinioStorage) Delete(ctx context.Context, fileName string) error {
+	minioClient, err := minio.New(ms.address, &minio.Options{
+		Creds:  credentials.NewStaticV4(ms.userId, ms.accessKey, ""),
+		Secure: ms.secure,
+	})
+	if err != nil {
+		return err
+	}
+	err = minioClient.RemoveObject(ctx, ms.bucketName, fileName, minio.RemoveObjectOptions{})
 	if err != nil {
 		return err
 	}

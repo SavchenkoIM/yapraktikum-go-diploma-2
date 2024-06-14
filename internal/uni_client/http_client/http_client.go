@@ -1,3 +1,5 @@
+// HTTP client implementation
+
 package http_client
 
 import (
@@ -14,6 +16,7 @@ import (
 	"path/filepath"
 )
 
+// HTTP client data
 type HTTPClient struct {
 	cfg       *config.ClientConfig
 	logger    *zap.Logger
@@ -21,6 +24,7 @@ type HTTPClient struct {
 	sendError chan error
 }
 
+// Constructor for HTTP client object
 func NewHTTPClient(cfg *config.ClientConfig, logger *zap.Logger) *HTTPClient {
 	return &HTTPClient{
 		cfg:       cfg,
@@ -29,6 +33,7 @@ func NewHTTPClient(cfg *config.ClientConfig, logger *zap.Logger) *HTTPClient {
 	}
 }
 
+// Returns client with TLS support
 func (c *HTTPClient) getTlsClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
@@ -40,10 +45,12 @@ func (c *HTTPClient) getTlsClient() *http.Client {
 	}
 }
 
+// Sets default user auth token
 func (c *HTTPClient) SetToken(token string) {
 	c.token = token
 }
 
+// Download file
 func (c *HTTPClient) DownloadFile(ctx context.Context, fileName string) error {
 	r, err := http.NewRequest("POST",
 		fmt.Sprintf("https://%s/download", c.cfg.AddressHTTP),
@@ -83,6 +90,7 @@ func (c *HTTPClient) DownloadFile(ctx context.Context, fileName string) error {
 	return nil
 }
 
+// Upload file
 func (c *HTTPClient) UploadFile(ctx context.Context, fileName string) error {
 
 	fFileName := ""

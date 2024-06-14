@@ -1,3 +1,5 @@
+// Implementation of unified gRPC/HTTP client. Uses HTTP for upload and download file, gRPC for other operations.
+
 package uni_client
 
 import (
@@ -12,12 +14,14 @@ import (
 	"path/filepath"
 )
 
+// UniClient data
 type UniClient struct {
 	gCli   *grpc_client.GRPCClient
 	hCli   *http_client.HTTPClient
 	logger *zap.Logger
 }
 
+// Constructs UniClient data object
 func NewUniClient(logger *zap.Logger, clientConfig config.ClientConfig) *UniClient {
 	return &UniClient{
 		gCli:   grpc_client.NewGRPCClient(&clientConfig, logger),
@@ -26,14 +30,17 @@ func NewUniClient(logger *zap.Logger, clientConfig config.ClientConfig) *UniClie
 	}
 }
 
+// Starts client
 func (c *UniClient) Start(ctx context.Context) {
 	c.gCli.Start(ctx)
 }
 
+// Shuts client down
 func (c *UniClient) Stop(ctx context.Context) error {
 	return c.gCli.Stop(ctx)
 }
 
+// User login
 func (c *UniClient) UserLogin(ctx context.Context, username string, password string) (string, error) {
 	userData, err := c.gCli.UserLogin(ctx, username, password)
 	if err != nil {
@@ -43,6 +50,7 @@ func (c *UniClient) UserLogin(ctx context.Context, username string, password str
 	return userData.AccessToken, nil
 }
 
+// User create
 func (c *UniClient) UserCreate(ctx context.Context, username string, password string) (string, error) {
 	userData, err := c.gCli.UserCreate(ctx, username, password)
 	if err != nil {
@@ -52,11 +60,13 @@ func (c *UniClient) UserCreate(ctx context.Context, username string, password st
 	return userData.AccessToken, nil
 }
 
+// Sets default user auth token
 func (c *UniClient) SetToken(token string) {
 	c.hCli.SetToken(token)
 	c.gCli.SetToken(token)
 }
 
+// Download file
 func (c *UniClient) DownloadFile(ctx context.Context, objectName string) error {
 	data, err := c.gCli.DataRead(ctx, &proto.DataReadRequest{
 		Type:     proto.DataType_BLOB,
@@ -78,6 +88,22 @@ func (c *UniClient) DownloadFile(ctx context.Context, objectName string) error {
 	return nil
 }
 
+// Delete file
+func (c *UniClient) DeleteFile(ctx context.Context, objectName string) error {
+	_, err := c.gCli.DataWrite(ctx, &proto.DataWriteRequest{
+		Action: proto.OperationType_DELETE,
+		Data: &proto.DataWriteRequest_Blob{
+			Blob: &proto.DataBLOB{
+				Name: objectName,
+			}},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Upload file
 func (c *UniClient) UploadFile(ctx context.Context, objectName string, fileName string) error {
 	err := c.hCli.UploadFile(ctx, fileName)
 	if err != nil {
@@ -97,14 +123,17 @@ func (c *UniClient) UploadFile(ctx context.Context, objectName string, fileName 
 	return nil
 }
 
+// Data write
 func (c *UniClient) DataWrite(ctx context.Context, request *proto.DataWriteRequest) (*proto.EmptyResponse, error) {
 	return c.gCli.DataWrite(ctx, request)
 }
 
+// Data read
 func (c *UniClient) DataRead(ctx context.Context, request *proto.DataReadRequest) (*proto.DataReadResponse, error) {
 	return c.gCli.DataRead(ctx, request)
 }
 
+// Data print
 func (c *UniClient) DataPrint(ctx context.Context, filter *proto.DataReadRequest) {
 	dataRes, err := c.DataRead(ctx, filter)
 	if err != nil {

@@ -100,6 +100,7 @@ func getServerConfigFromEnvVar() serverConfigNull {
 	return serverConfig
 }
 
+// Concatenates server configs from different sources
 func CombineServerConfigs(configs ...serverConfigNull) *ServerConfig {
 	serverConfig := ServerConfig{
 		GrpcEndPoint:       ":8081",

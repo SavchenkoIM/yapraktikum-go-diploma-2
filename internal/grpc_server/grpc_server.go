@@ -1,3 +1,5 @@
+// gRPC server implementation
+
 package grpc_server
 
 import (
@@ -13,6 +15,7 @@ import (
 	"passwordvault/internal/utils"
 )
 
+// gRPC server object data
 type GRPCServer struct {
 	proto.UnsafePasswordVaultServiceServer
 	dataStorage *server_store.Storage
@@ -22,10 +25,12 @@ type GRPCServer struct {
 	logger      *zap.Logger
 }
 
+// Constructor of gRPC server object
 func NewGRPCServer(dataStorage *server_store.Storage, cfg *config.ServerConfig, logger *zap.Logger) *GRPCServer {
 	return &GRPCServer{dataStorage: dataStorage, cfg: cfg, logger: logger}
 }
 
+// Starts gRPC server listener asyncronously
 func (s *GRPCServer) ListenAndServeAsync() {
 	var err error
 	s.srv, err = net.Listen("tcp", s.cfg.GrpcEndPoint)
@@ -56,6 +61,7 @@ func (s *GRPCServer) ListenAndServeAsync() {
 	}()
 }
 
+// Stops server
 func (s *GRPCServer) Shutdown(context.Context) error {
 	s.gsrv.Stop()
 	return nil

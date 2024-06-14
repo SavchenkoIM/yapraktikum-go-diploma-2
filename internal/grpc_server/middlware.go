@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
+// Middlware for gRPC server
 type GRPCServerMiddleware struct {
 	Cfg    config.ServerConfig
 	Logger *zap.Logger
 }
 
+// Logging middlware for gRPC server
 func (s *GRPCServer) WithLogging(ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
@@ -33,6 +35,7 @@ func (s *GRPCServer) WithLogging(ctx context.Context,
 	return h, err
 }
 
+// Middlware handler for authentication data for gRPC server
 func (s *GRPCServer) authFunc(ctx context.Context) (context.Context, error) {
 	method, _ := grpc.Method(ctx)
 	if strings.HasPrefix(method, "/grpc.PasswordVaultService/User") {

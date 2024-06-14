@@ -1,3 +1,4 @@
+// HTTP server implementation
 package http_server
 
 import (
@@ -13,6 +14,7 @@ import (
 	"passwordvault/internal/storage/server_store"
 )
 
+// HTTP server object data
 type HttpServer struct {
 	server *http.Server
 	logger *zap.Logger
@@ -20,6 +22,7 @@ type HttpServer struct {
 	db     *server_store.Storage
 }
 
+// Constructs HTTPServer object
 func NewHttpServer(ctx context.Context, db *server_store.Storage, config *config.ServerConfig, logger *zap.Logger) *HttpServer {
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
@@ -51,6 +54,7 @@ func NewHttpServer(ctx context.Context, db *server_store.Storage, config *config
 	return srv
 }
 
+// Starts HTTP server asyncronously
 func (s *HttpServer) ListenAndServeAsync() {
 	go func() {
 		s.logger.Info("HTTP server running at " + s.config.HttpEndPoint)

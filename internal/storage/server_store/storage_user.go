@@ -14,6 +14,7 @@ import (
 	"strings"
 )
 
+// Handler for user create request
 func (s *Storage) UserRegister(ctx context.Context, login string, password string) error {
 
 	salt := make([]byte, 32) // salt, 32 bytes len
@@ -65,6 +66,7 @@ func (s *Storage) UserRegister(ctx context.Context, login string, password strin
 	return nil
 }
 
+// Checks if provided token valid and returns user idcd
 func (s *Storage) UserCheckLoggedIn(token string) (string, error) {
 	ac := utils.AuthClaims{}
 	err := ac.SetFromJWT(token, s.encKey)
@@ -75,6 +77,7 @@ func (s *Storage) UserCheckLoggedIn(token string) (string, error) {
 	return ac.UserID, nil
 }
 
+// Handler for user login request
 func (s *Storage) UserLogin(ctx context.Context, login string, password string) (string, error) {
 
 	var err error

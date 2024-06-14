@@ -4,6 +4,7 @@ import (
 	"context"
 )
 
+// Returns minio password for logged user
 func (s *Storage) GetFileStoreKey(ctx context.Context) (string, error) {
 	userId := ctx.Value("LoggedUserId").(string)
 

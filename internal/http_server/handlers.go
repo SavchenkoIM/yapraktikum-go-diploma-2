@@ -11,10 +11,12 @@ import (
 	"strings"
 )
 
+// JSON parsing structure for Dlownload File request
 type DownloadFileReqBody struct {
 	Filename string `json:"filename"`
 }
 
+// gRPC gateway compatible middlware: Logger.
 func (s *HttpServer) WithLoggingHTTP(handlerFunc runtime.HandlerFunc) runtime.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request, m map[string]string) {
 		s.logger.Sugar().Infof("URL: %s; Content-Disposition: %s", req.URL.Path, req.Header.Get("Content-Disposition"))
@@ -22,6 +24,7 @@ func (s *HttpServer) WithLoggingHTTP(handlerFunc runtime.HandlerFunc) runtime.Ha
 	}
 }
 
+// gRPC gateway compatible middlware: authentication data handler.
 func (s *HttpServer) WithCheckCredentials(handlerFunc runtime.HandlerFunc) runtime.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request, m map[string]string) {
 		scheme, token, found := strings.Cut(req.Header.Get("Authorization"), " ")
@@ -42,6 +45,7 @@ func (s *HttpServer) WithCheckCredentials(handlerFunc runtime.HandlerFunc) runti
 	}
 }
 
+// Download file handler
 func (s *HttpServer) DownloadFile(w http.ResponseWriter, r *http.Request, dummy map[string]string) {
 
 	fileStoreId := strings.Replace(r.Context().Value("LoggedUserId").(string), "-", "", -1)
@@ -92,6 +96,7 @@ func (s *HttpServer) DownloadFile(w http.ResponseWriter, r *http.Request, dummy 
 	}
 }
 
+// Upload file handler
 func (s *HttpServer) UploadFile(w http.ResponseWriter, r *http.Request, dummy map[string]string) {
 
 	fileStoreId := strings.Replace(r.Context().Value("LoggedUserId").(string), "-", "", -1)

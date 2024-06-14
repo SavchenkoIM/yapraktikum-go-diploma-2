@@ -11,6 +11,7 @@ import (
 // RecordType
 type RecordType string
 
+// Accepted data types for Read Data record
 var acceptedDataTypes = map[string]proto.DataType{
 	"any":  proto.DataType_UNSPECIFIED,
 	"cred": proto.DataType_CREDENTIALS,
@@ -19,6 +20,7 @@ var acceptedDataTypes = map[string]proto.DataType{
 	"note": proto.DataType_TEXT_NOTE,
 }
 
+// Returns data type from string representation
 func (d RecordType) GetType() (proto.DataType, error) {
 	dd := strings.ToLower(string(d))
 	knownKeys := maps.Keys(acceptedDataTypes)
@@ -38,6 +40,7 @@ func (d RecordType) GetType() (proto.DataType, error) {
 // MetadataFilters
 type MetadataFilters []string
 
+// Returns metadata fil
 func (m MetadataFilters) GetFilters() ([]*proto.MetaDataKV, error) {
 	md := make([]*proto.MetaDataKV, 0)
 	for _, filter := range m {

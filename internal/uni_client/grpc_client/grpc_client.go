@@ -1,3 +1,5 @@
+// GRPC client implementation
+
 package grpc_client
 
 import (
@@ -10,6 +12,7 @@ import (
 	proto "passwordvault/internal/proto/gen"
 )
 
+// GRPC client data
 type GRPCClient struct {
 	conn      *grpc.ClientConn
 	cfg       *config.ClientConfig
@@ -19,10 +22,12 @@ type GRPCClient struct {
 	sendError chan error
 }
 
+// Constructor from GRPC client object
 func NewGRPCClient(cfg *config.ClientConfig, logger *zap.Logger) *GRPCClient {
 	return &GRPCClient{cfg: cfg, logger: logger, sendError: make(chan error, 1)}
 }
 
+// gRPC client start
 func (c *GRPCClient) Start(ctx context.Context) {
 	// Connection
 	var err error
@@ -36,6 +41,7 @@ func (c *GRPCClient) Start(ctx context.Context) {
 	c.client = proto.NewPasswordVaultServiceClient(c.conn)
 }
 
+// gRPC client shutdown
 func (c *GRPCClient) Stop(ctx context.Context) error {
 	return c.conn.Close()
 }
@@ -52,6 +58,7 @@ func (c *GRPCClient) UserLogin(ctx context.Context, username string, password st
 	return userRes, nil
 }
 
+// User create message
 func (c *GRPCClient) UserCreate(ctx context.Context, username string, password string) (*proto.UserResponse, error) {
 	userRes, err := c.client.UserCreate(ctx, &proto.UserRequest{
 		Username: username,
@@ -64,14 +71,17 @@ func (c *GRPCClient) UserCreate(ctx context.Context, username string, password s
 	return userRes, nil
 }
 
+// Sets default user token
 func (c *GRPCClient) SetToken(token string) {
 	c.token = token
 }
 
+// Data write message
 func (c *GRPCClient) DataWrite(ctx context.Context, request *proto.DataWriteRequest) (*proto.EmptyResponse, error) {
 	return c.client.DataWrite(ctx, request)
 }
 
+// Data read message
 func (c *GRPCClient) DataRead(ctx context.Context, filter *proto.DataReadRequest) (*proto.DataReadResponse, error) {
 	return c.client.DataRead(ctx, filter)
 }

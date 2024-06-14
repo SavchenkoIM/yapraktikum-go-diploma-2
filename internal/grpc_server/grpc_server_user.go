@@ -10,6 +10,7 @@ import (
 	"passwordvault/internal/storage/server_store"
 )
 
+// Handler for User Login request
 func (s *GRPCServer) UserLogin(ctx context.Context, in *proto.UserRequest) (*proto.UserResponse, error) {
 	res := &proto.UserResponse{AccessToken: ""}
 
@@ -24,6 +25,7 @@ func (s *GRPCServer) UserLogin(ctx context.Context, in *proto.UserRequest) (*pro
 	return res, nil
 }
 
+// Handler for User Create request
 func (s *GRPCServer) UserCreate(ctx context.Context, in *proto.UserRequest) (*proto.UserResponse, error) {
 	res := &proto.UserResponse{AccessToken: ""}
 
