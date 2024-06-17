@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	proto "passwordvault/internal/proto/gen"
+	"slices"
 )
 
 // Handler for data read request
@@ -15,7 +17,82 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 
 	res := &proto.DataReadResponse{}
 
-	LoggedUserId := ctx.Value("LoggedUserId").(string)
+	LoggedUserId, err := getLoggedUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var dataTypes []proto.DataType
+	if request.Type != proto.DataType_UNSPECIFIED {
+		dataTypes = []proto.DataType{request.Type}
+	} else {
+		dataTypes = []proto.DataType{
+			proto.DataType_CREDENTIALS,
+			proto.DataType_CREDIT_CARD,
+			proto.DataType_TEXT_NOTE,
+			proto.DataType_BLOB,
+		}
+	}
+
+	for _, dataType := range dataTypes {
+		if !slices.Contains(supportedObjectTypes, dataType) {
+			return nil, errors.Wrapf(ErrUnimplemented, "Unknown data type")
+		}
+
+		query, params := getDataReadQueryFull(dataType, LoggedUserId, request, s.config)
+
+		rows, err := s.dbConn.Query(ctx, query, params...)
+		if err != nil {
+			return nil, err
+		}
+
+		var name string
+		var mname pgtype.Text
+		var mcontent pgtype.Text
+		dataMap := make(map[string]*proto.DataRecord) // Name : Object with metadata
+
+		for rows.Next() {
+			data, err := objectTypes[dataType].ScanFunc(rows, &name, &mname, &mcontent)
+			if err != nil {
+				return nil, status.Error(codes.Unknown, fmt.Sprintf("database error: %v", err))
+			}
+
+			if !slices.Contains(maps.Keys(dataMap), name) {
+				dataMap[name] = &proto.DataRecord{
+					Data:     data.Data,
+					Metadata: make([]*proto.MetaDataKV, 0),
+				}
+			}
+
+			if mname.Valid && mcontent.Valid {
+				dataMap[name].Metadata = append(dataMap[name].Metadata, &proto.MetaDataKV{
+					Name:  mname.String,
+					Value: mcontent.String,
+				})
+			}
+		}
+
+		for _, v := range dataMap {
+			v := v
+			res.Data = append(res.Data, v)
+		}
+
+		maps.Clear(dataMap)
+	}
+
+	return res, nil
+
+}
+
+// Handler for data read request (alt version with multy db queries)
+func (s *Storage) DataReadAlt(ctx context.Context, request *proto.DataReadRequest) (*proto.DataReadResponse, error) {
+
+	res := &proto.DataReadResponse{}
+
+	LoggedUserId, err := getLoggedUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	var tableName string
 
@@ -46,7 +123,7 @@ func (s *Storage) DataRead(ctx context.Context, request *proto.DataReadRequest) 
 			return nil, errors.Wrapf(ErrUnimplemented, "Unknown data type")
 		}
 
-		query, params := getDataReadQuery(tableName, LoggedUserId, request, s.config)
+		query, params := getDataReadQuery(dataType, LoggedUserId, request, s.config)
 
 		rows, err := s.dbConn.Query(ctx, query, params...)
 		if err != nil {

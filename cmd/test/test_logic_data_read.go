@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	proto "passwordvault/internal/proto/gen"
 	"passwordvault/internal/uni_client"
 	"slices"
@@ -100,7 +101,7 @@ func testLogicDataCheck(ctx context.Context, t *testing.T, client *uni_client.Un
 		})
 		assert.NoError(t, err)
 		if data != nil {
-			assert.Equal(t, 1, len(data.Data))
+			require.Equal(t, 1, len(data.Data))
 			cc, ok := data.Data[0].Data.(*proto.DataRecord_CreditCard)
 			assert.True(t, ok)
 			if ok {

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"passwordvault/internal/config"
+	proto "passwordvault/internal/proto/gen"
 	"passwordvault/internal/utils"
 	"sync"
 	"time"
@@ -70,7 +71,6 @@ func New(config *config.ServerConfig, logger *zap.Logger) (*Storage, error) {
 		s.logger.Sugar().Errorf("Unable to create connection pool: %s", err)
 		return nil, err
 	}
-
 	return &s, nil
 }
 
@@ -92,14 +92,14 @@ func (s *Storage) Init(ctx context.Context) error {
 		queryCreateExtensionUUID,
 		queryCreateExtensionPGCrypto,
 		queryCreateUsers,
-		getCreateDataQuery("credentials"),
-		getCreateDataQuery("credit_card"),
-		getCreateDataQuery("text_note"),
-		getCreateDataQuery("blob"),
-		getCreateMetaDataQuery("credentials"),
-		getCreateMetaDataQuery("credit_card"),
-		getCreateMetaDataQuery("text_note"),
-		getCreateMetaDataQuery("blob"),
+		getCreateDataQuery(proto.DataType_CREDENTIALS),
+		getCreateDataQuery(proto.DataType_CREDIT_CARD),
+		getCreateDataQuery(proto.DataType_TEXT_NOTE),
+		getCreateDataQuery(proto.DataType_BLOB),
+		getCreateMetaDataQuery(proto.DataType_CREDENTIALS),
+		getCreateMetaDataQuery(proto.DataType_CREDIT_CARD),
+		getCreateMetaDataQuery(proto.DataType_TEXT_NOTE),
+		getCreateMetaDataQuery(proto.DataType_BLOB),
 	}
 
 	for _, query := range queries {

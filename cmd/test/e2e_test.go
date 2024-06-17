@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"os"
 	"passwordvault/cmd/test/testcontainers"
@@ -33,21 +34,13 @@ func Test_E2E(t *testing.T) {
 			dbConnectionString = "postgresql://postgres:postgres@postgres/postgres?sslmode=disable"
 		} else {
 			cMinio, err = testcontainers.NewMinioContainer()
-			if err != nil {
-				assert.FailNow(t, err.Error())
-			}
+			require.NoError(t, err)
 			minioEndpoint, err = cMinio.EndPoint()
-			if err != nil {
-				assert.FailNow(t, err.Error())
-			}
+			require.NoError(t, err)
 			cPostgres, err = testcontainers.NewPostgresContainer()
-			if err != nil {
-				assert.FailNow(t, err.Error())
-			}
+			require.NoError(t, err)
 			dbConnectionString, err = cPostgres.ConnectionString()
-			if err != nil {
-				assert.FailNow(t, err.Error())
-			}
+			require.NoError(t, err)
 		}
 	})
 
@@ -57,8 +50,9 @@ func Test_E2E(t *testing.T) {
 	}
 
 	logger, err := zap.NewDevelopment()
+	require.NoError(t, err)
 
-	logger.Sugar().Infof("Minio: %s, Postgres: %s", minioEndpoint, dbConnectionString)
+	t.Logf("Minio: %s, Postgres: %s", minioEndpoint, dbConnectionString)
 
 	t.Run("Starting_Server", func(t *testing.T) {
 		assert.NoError(t, err)
@@ -77,13 +71,9 @@ func Test_E2E(t *testing.T) {
 		}
 
 		db, err := server_store.New(&srvCfg, logger)
-		if err != nil {
-			logger.Fatal(err.Error())
-		}
+		require.NoError(t, err)
 		err = db.Init(ctx)
-		if err != nil {
-			logger.Error(err.Error())
-		}
+		require.NoError(t, err)
 
 		gSrv := grpc_server.NewGRPCServer(db, &srvCfg, logger)
 		gSrv.ListenAndServeAsync()

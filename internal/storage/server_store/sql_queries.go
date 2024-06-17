@@ -2,15 +2,9 @@ package server_store
 
 import (
 	"fmt"
+	proto "passwordvault/internal/proto/gen"
 	"strings"
 )
-
-var dataFieldsCount = map[string]int{
-	"text_note":   1,
-	"credentials": 2,
-	"credit_card": 3,
-	"blob":        1,
-}
 
 var queryCreateExtensionUUID = `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`
 
@@ -44,8 +38,9 @@ WITH (
     OIDS = FALSE
 );`
 
-func getCreateDataQuery(tableName string) string {
-	numFields := dataFieldsCount[tableName]
+func getCreateDataQuery(objectType proto.DataType) string {
+	numFields := objectTypes[objectType].FieldsCount
+	tableName := objectTypes[objectType].TableName
 	s := strings.Replace(queryCreateData, "{table}", tableName, -1)
 	cont := ""
 	for i := 0; i < numFields; i++ {
@@ -69,6 +64,6 @@ WITH (
     OIDS = FALSE
 );`
 
-func getCreateMetaDataQuery(tableName string) string {
-	return strings.Replace(queryCreateMetaData, "{table}", tableName, -1)
+func getCreateMetaDataQuery(objectType proto.DataType) string {
+	return strings.Replace(queryCreateMetaData, "{table}", objectTypes[objectType].TableName, -1)
 }
