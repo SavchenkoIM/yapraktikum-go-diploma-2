@@ -31,17 +31,16 @@ func NewGRPCServer(dataStorage *server_store.Storage, cfg *config.ServerConfig, 
 }
 
 // Starts gRPC server listener asyncronously
-func (s *GRPCServer) ListenAndServeAsync() {
+func (s *GRPCServer) ListenAndServeAsync() error {
 	var err error
 	s.srv, err = net.Listen("tcp", s.cfg.GrpcEndPoint)
 	if err != nil {
-		s.logger.Error(err.Error())
-		return
+		return err
 	}
 
 	creds, err := utils.LoadTLSCredentials(s.cfg.CertFileName, s.cfg.PKFileName)
 	if err != nil {
-		s.logger.Fatal(err.Error())
+		return err
 	}
 	s.gsrv = grpc.NewServer(
 		grpc.Creds(creds),
@@ -59,6 +58,8 @@ func (s *GRPCServer) ListenAndServeAsync() {
 			return
 		}
 	}()
+
+	return nil
 }
 
 // Stops server

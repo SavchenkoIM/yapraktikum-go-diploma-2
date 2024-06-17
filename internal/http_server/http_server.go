@@ -55,7 +55,7 @@ func NewHttpServer(ctx context.Context, db *server_store.Storage, config *config
 }
 
 // Starts HTTP server asyncronously
-func (s *HttpServer) ListenAndServeAsync() {
+func (s *HttpServer) ListenAndServeAsync() error {
 	go func() {
 		s.logger.Info("HTTP server running at " + s.config.HttpEndPoint)
 
@@ -64,4 +64,15 @@ func (s *HttpServer) ListenAndServeAsync() {
 			return
 		}
 	}()
+
+	return nil
+}
+
+// Stops server
+func (s *HttpServer) Shutdown(ctx context.Context) error {
+	err := s.server.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }

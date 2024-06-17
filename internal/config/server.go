@@ -56,8 +56,8 @@ func GetServerConfig() (*ServerConfig, error) {
 
 		srvConfig.GrpcEndPoint = viper.GetString("ag")
 		srvConfig.HttpEndPoint = viper.GetString("ah")
-		srvConfig.MinioEndPoint = viper.GetString("mcid")
-		srvConfig.MinioAdminId = viper.GetString("mckey")
+		srvConfig.MinioEndPoint = viper.GetString("am")
+		srvConfig.MinioAdminId = viper.GetString("mcid")
 		srvConfig.MinioAdminKey = viper.GetString("mckey")
 		srvConfig.DBConnectionString = viper.GetString("d")
 		srvConfig.Key = viper.GetString("key")

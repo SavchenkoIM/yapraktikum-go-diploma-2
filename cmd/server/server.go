@@ -39,12 +39,18 @@ func main() {
 	}
 
 	gSrv := grpc_server.NewGRPCServer(db, cfg, logger)
-	gSrv.ListenAndServeAsync()
+	err = gSrv.ListenAndServeAsync()
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
 
 	hSrv := http_server.NewHttpServer(parentCtx, db, cfg, logger)
-	hSrv.ListenAndServeAsync()
+	err = hSrv.ListenAndServeAsync()
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
 
-	gracefulShutdown(parentCtx, cancel, logger, gSrv, db)
+	gracefulShutdown(parentCtx, cancel, logger, gSrv, hSrv, db)
 }
 
 func gracefulShutdown(
@@ -52,6 +58,7 @@ func gracefulShutdown(
 	cancel context.CancelFunc,
 	logger *zap.Logger,
 	gSrv *grpc_server.GRPCServer,
+	hSrv *http_server.HttpServer,
 	db *server_store.Storage) {
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGTERM, syscall.SIGINT)
@@ -59,6 +66,10 @@ func gracefulShutdown(
 	logger.Info("Got one of stop signals, shutting down server gracefully, SIGNAL NAME :" + s.String())
 	cancel()
 	err := gSrv.Shutdown(ctx)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	err = hSrv.Shutdown(ctx)
 	if err != nil {
 		logger.Error(err.Error())
 	}
