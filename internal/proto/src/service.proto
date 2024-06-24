@@ -1,0 +1,127 @@
+syntax = "proto3";
+package grpc;
+option go_package="internal/proto";
+
+import "google/api/annotations.proto";
+
+// User handling
+
+message UserRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message UserResponse { string access_token = 1; }
+
+// Data structures
+
+message DataCredentials {
+  string name = 1;
+  string login = 2;
+  string password = 3;
+}
+
+message DataCreditCard {
+  string name = 1;
+  string number = 2;
+  string until = 3;
+  string holder = 4;
+}
+
+message DataTextNote {
+  string name = 1;
+  string text = 2;
+}
+
+message DataBLOB {
+  string name = 1;
+  string file_name = 2;
+}
+
+enum DataType {
+  UNSPECIFIED = 0;
+  CREDENTIALS = 1;
+  CREDIT_CARD = 2;
+  TEXT_NOTE = 3;
+  BLOB = 4;
+}
+
+enum OperationType {
+  NOOP = 0;
+  UPSERT = 1;
+  DELETE = 2;
+}
+
+message MetaDataKV {
+  DataType parent_type = 1;
+  string parent_name = 2;
+  string name = 3;
+  string value = 4;
+}
+
+// Data messages
+
+message DataWriteRequest {
+  OperationType action = 1;
+  oneof data {
+    DataCredentials credentials = 2;
+    DataCreditCard credit_card = 3;
+    DataTextNote text_note = 4;
+    DataBLOB blob = 5;
+    MetaDataKV metadata = 6;
+  }
+}
+
+message DataReadRequest {
+  DataType type = 1;
+  string name_mask = 2;
+  repeated MetaDataKV metadata = 3;
+}
+
+message DataRecord {
+  oneof data {
+    DataCredentials credentials = 1;
+    DataCreditCard credit_card = 2;
+    DataTextNote text_note = 3;
+    DataBLOB blob = 4;
+  }
+  repeated MetaDataKV metadata = 5;
+}
+
+message DataReadResponse {
+  repeated DataRecord data = 1;
+}
+
+// Misc
+
+message EmptyResponse {
+}
+
+// Service
+
+service PasswordVaultService {
+  rpc UserCreate(UserRequest) returns (UserResponse) {
+    option (google.api.http) = {
+      post: "/user/create"
+      body: "*"
+    };
+  };
+  rpc UserLogin(UserRequest) returns (UserResponse) {
+    option (google.api.http) = {
+      post: "/user/login"
+      body: "*"
+    };
+  };
+  rpc DataWrite(DataWriteRequest) returns (EmptyResponse) {
+    option (google.api.http) = {
+      post: "/data/write"
+      body: "*"
+    };
+  };
+  rpc DataRead(DataReadRequest) returns (DataReadResponse) {
+    option (google.api.http) = {
+      post: "/data/read"
+      body: "*"
+    };
+  };
+}
